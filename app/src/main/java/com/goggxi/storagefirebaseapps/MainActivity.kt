@@ -13,11 +13,8 @@ import coil.load
 import coil.transform.RoundedCornersTransformation
 import com.goggxi.storagefirebaseapps.databinding.ActivityMainBinding
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import java.lang.Exception
 
 
@@ -41,7 +38,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initAction() {
-
         binding.buttonAddPhoto.setOnClickListener {
             pickImage()
         }
@@ -140,6 +136,7 @@ class MainActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main){
                     Toast.makeText(this@MainActivity , "Success Uploaded", Toast.LENGTH_LONG).show()
+                    delay(3000L)
                     resetApplication()
                 }
             }

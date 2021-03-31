@@ -2,6 +2,7 @@ package com.goggxi.storagefirebaseapps
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.goggxi.storagefirebaseapps.databinding.ActivityShowListPhotoBinding
@@ -15,6 +16,7 @@ import kotlinx.coroutines.withContext
 class ShowListPhotoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityShowListPhotoBinding
+    private lateinit var animalAdapter: AnimalAdapter
 
     private val imageStorageReference = FirebaseStorage.getInstance().getReference("uploads")
 
@@ -38,9 +40,12 @@ class ShowListPhotoActivity : AppCompatActivity() {
                 imageUrls.add(url.toString())
             }
             withContext(Dispatchers.Main) {
-                val imageAdapter = AnimalAdapter(imageUrls)
+                animalAdapter = AnimalAdapter(imageUrls)
+                if (animalAdapter.itemCount == 0) {
+                    binding.textViewNoData.visibility = View.VISIBLE
+                }
                 binding.recyclerViewAnimal.apply {
-                    adapter = imageAdapter
+                    adapter = animalAdapter
                     layoutManager = LinearLayoutManager(this@ShowListPhotoActivity)
                 }
             }

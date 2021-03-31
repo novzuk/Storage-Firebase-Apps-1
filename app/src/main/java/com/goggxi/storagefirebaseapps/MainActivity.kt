@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
             if (imageUri != null) {
                 if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
                     binding.inputTextNameAnimal.error = "Required*"
+                    Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
                 } else {
                     uploadImage(nameAnimal)
                 }
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
             nameAnimal = binding.editTextNameAnimal.text.toString().trim()
             if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
                 binding.inputTextNameAnimal.error = "Required*"
+                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
             } else {
                 downloadImage(nameAnimal)
             }
@@ -72,13 +74,14 @@ class MainActivity : AppCompatActivity() {
             nameAnimal = binding.editTextNameAnimal.text.toString().trim()
             if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
                 binding.inputTextNameAnimal.error = "Required*"
+                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
             } else {
                 deleteImage(nameAnimal)
             }
         }
 
         binding.buttonShowAllImage.setOnClickListener {
-
+            startActivity(Intent(this, ShowListPhotoActivity::class.java))
         }
     }
 
@@ -153,11 +156,8 @@ class MainActivity : AppCompatActivity() {
             val maxDownloadSize = 5L * 1024 * 1024
             val bytes = imageStorageReference.child(animalName).getBytes(maxDownloadSize).await()
             val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-//            binding.progressBarLoadingIndicator.visibility = View.VISIBLE
-//            binding.progressBarLoadingIndicator.isIndeterminate = true
 
             withContext(Dispatchers.Main) {
-                binding.progressBarLoadingIndicator.visibility = View.GONE
                 binding.imageViewAnimal.load(bmp){
                     crossfade(true)
                     crossfade(500)
@@ -166,7 +166,6 @@ class MainActivity : AppCompatActivity() {
             }
         } catch(e: Exception) {
             withContext(Dispatchers.Main) {
-                binding.progressBarLoadingIndicator.visibility = View.GONE
                 Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
             }
         }

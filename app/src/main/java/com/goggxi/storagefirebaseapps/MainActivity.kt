@@ -4,10 +4,10 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import coil.load
 import coil.transform.RoundedCornersTransformation
@@ -15,18 +15,19 @@ import com.goggxi.storagefirebaseapps.databinding.ActivityMainBinding
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import java.lang.Exception
 
 
 private const val REQUEST_CODE_PICK_IMAGE = 72
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var nameAnimal : String
+
+    private lateinit var title : String
 
     private var imageUri : Uri? = null
 
-    private val imageStorageReference = FirebaseStorage.getInstance().getReference("uploads")
+    private val storageReference = FirebaseStorage.getInstance().getReference("uploads")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,22 +35,33 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         initAction()
-        setImageViewAnimal()
+        setImageViewHome()
     }
 
+    /**
+     * Fungsi mendeklarasikan semua aksi klik
+     */
     private fun initAction() {
-        binding.buttonAddPhoto.setOnClickListener {
-            pickImage()
+
+        binding.buttonSelectImage.setOnClickListener {
+            Intent(Intent.ACTION_GET_CONTENT).also {
+                it.type = "image/*"
+                startActivityForResult(it, REQUEST_CODE_PICK_IMAGE)
+            }
         }
 
         binding.buttonUploadImage.setOnClickListener {
-            nameAnimal = binding.editTextNameAnimal.text.toString().trim()
+            title = binding.editTextTitle.text.toString().trim()
             if (imageUri != null) {
-                if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
-                    binding.inputTextNameAnimal.error = "Required*"
-                    Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
+                if (title.isBlank() || title.isEmpty()){
+                    binding.inputTextTitle.error = "Required*"
+                    Toast.makeText(this, "Name isRequired!", Toast.LENGTH_SHORT).show()
                 } else {
-                    uploadImage(nameAnimal)
+                    binding.progressBarLoadingIndicator.isIndeterminate = false
+                    binding.progressBarLoadingIndicator.visibility = View.VISIBLE
+                    binding.textViewIndicatorLoading.visibility = View.VISIBLE
+                    binding.inputTextTitle.error = null
+                    uploadImage(title)
                 }
             } else {
                 Toast.makeText(this, "Select Image!", Toast.LENGTH_LONG).show()
@@ -57,22 +69,28 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.buttonDownloadImage.setOnClickListener {
-            nameAnimal = binding.editTextNameAnimal.text.toString().trim()
-            if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
-                binding.inputTextNameAnimal.error = "Required*"
-                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
+            title = binding.editTextTitle.text.toString().trim()
+            if (title.isBlank() || title.isEmpty()){
+                binding.inputTextTitle.error = "Required*"
+                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_SHORT).show()
             } else {
-                downloadImage(nameAnimal)
+                binding.progressBarLoadingIndicator.isIndeterminate = true
+                binding.progressBarLoadingIndicator.visibility = View.VISIBLE
+                binding.inputTextTitle.error = null
+                downloadImage(title)
             }
         }
 
         binding.buttonDeleteImage.setOnClickListener {
-            nameAnimal = binding.editTextNameAnimal.text.toString().trim()
-            if (nameAnimal.isBlank() || nameAnimal.isEmpty()){
-                binding.inputTextNameAnimal.error = "Required*"
-                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_LONG).show()
+            title = binding.editTextTitle.text.toString().trim()
+            if (title.isBlank() || title.isEmpty()){
+                binding.inputTextTitle.error = "Required*"
+                Toast.makeText(this, "Name isRequired!", Toast.LENGTH_SHORT).show()
             } else {
-                deleteImage(nameAnimal)
+                binding.progressBarLoadingIndicator.isIndeterminate = true
+                binding.progressBarLoadingIndicator.visibility = View.VISIBLE
+                binding.inputTextTitle.error = null
+                deleteImage(title)
             }
         }
 
@@ -81,37 +99,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setImageViewAnimal() {
-        binding.imageViewAnimal.load(ContextCompat.getDrawable(this, R.drawable.shape)){
+    /**
+     * Fungsi untuk mengatur gambar pada imageViewHome
+     */
+    private fun setImageViewHome() {
+        binding.imageViewHome.load(ContextCompat.getDrawable(this, R.drawable.shape)){
             crossfade(true)
             crossfade(500)
             transformations(RoundedCornersTransformation(10F))
         }
     }
 
-    private fun pickImage() {
-        Intent(Intent.ACTION_GET_CONTENT).also {
-            it.type = "image/*"
-            startActivityForResult(it, REQUEST_CODE_PICK_IMAGE)
-        }
-    }
-
-    private fun resetApplication() {
-        setImageViewAnimal()
+    /**
+     * Fungsi untuk mereset tampilan layout
+     */
+    private fun resetLayout() {
+        setImageViewHome()
         imageUri = null
-        binding.inputTextNameAnimal.error = null
-        binding.editTextNameAnimal.text?.clear()
+        binding.inputTextTitle.error = null
+        binding.editTextTitle.text?.clear()
         binding.progressBarLoadingIndicator.visibility = View.GONE
         binding.textViewIndicatorLoading.visibility = View.GONE
-        binding.imageViewAnimal.isFocusableInTouchMode = true
     }
 
+    /**
+     * Fungsi untuk mengambil uri gambar yang telah di pilih pada galleru
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_PICK_IMAGE) {
             data?.data?.let {
                 imageUri = it
-                binding.imageViewAnimal.load(imageUri){
+                binding.imageViewHome.load(imageUri){
                     crossfade(true)
                     crossfade(500)
                     transformations(RoundedCornersTransformation(10F))
@@ -120,14 +139,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Fungsi upload gambar ke firebase storage
+     */
     private fun uploadImage(animalName : String) = CoroutineScope(Dispatchers.IO).launch {
         try {
             imageUri?.let { uri ->
-                imageStorageReference.child(animalName).putFile(uri)
+                storageReference.child(animalName).putFile(uri)
                     .addOnProgressListener {
-                        binding.progressBarLoadingIndicator.visibility = View.VISIBLE
-                        binding.textViewIndicatorLoading.visibility = View.VISIBLE
-
                         val progress: Int = ((100 * it.bytesTransferred) / it.totalByteCount).toInt()
                         binding.progressBarLoadingIndicator.progress = progress
                         val indicator = "Loading... $progress%"
@@ -137,49 +156,60 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main){
                     Toast.makeText(this@MainActivity , "Success Uploaded", Toast.LENGTH_LONG).show()
                     delay(3000L)
-                    resetApplication()
+                    resetLayout()
                 }
             }
         } catch (e : Exception) {
             withContext(Dispatchers.Main){
                 Toast.makeText(this@MainActivity , e.message, Toast.LENGTH_LONG).show()
-                resetApplication()
+                resetLayout()
             }
         }
     }
 
+    /**
+     * Fungsi download gambar dari firebase storage
+     */
     private fun downloadImage(animalName: String) = CoroutineScope(Dispatchers.IO).launch {
         try {
             val maxDownloadSize = 5L * 1024 * 1024
-            val bytes = imageStorageReference.child(animalName).getBytes(maxDownloadSize).await()
-            val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val bytes = storageReference.child(animalName).getBytes(maxDownloadSize).await()
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
             withContext(Dispatchers.Main) {
-                binding.imageViewAnimal.load(bmp){
+                binding.imageViewHome.load(bitmap){
                     crossfade(true)
                     crossfade(500)
                     transformations(RoundedCornersTransformation(10F))
                 }
+                binding.progressBarLoadingIndicator.visibility = View.GONE
             }
         } catch(e: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+                binding.inputTextTitle.error = e.message
+                binding.progressBarLoadingIndicator.visibility = View.GONE
+                setImageViewHome()
+//                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
             }
         }
     }
 
+    /**
+     * Fungsi menghapus gambar dari firebase storage
+     */
     private fun deleteImage(animalName: String) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            imageStorageReference.child(animalName).delete().await()
+            storageReference.child(animalName).delete().await()
             withContext(Dispatchers.Main) {
                 Toast.makeText(this@MainActivity, "Successfully deleted image.",
                     Toast.LENGTH_LONG).show()
-                resetApplication()
+                resetLayout()
             }
         } catch(e: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
-                resetApplication()
+//                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+                binding.progressBarLoadingIndicator.visibility = View.GONE
+                binding.inputTextTitle.error = e.message
             }
         }
     }

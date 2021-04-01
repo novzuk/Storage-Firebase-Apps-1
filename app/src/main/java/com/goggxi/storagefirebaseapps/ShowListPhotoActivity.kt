@@ -16,41 +16,46 @@ import kotlinx.coroutines.withContext
 class ShowListPhotoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityShowListPhotoBinding
-    private lateinit var animalAdapter: AnimalAdapter
 
-    private val imageStorageReference = FirebaseStorage.getInstance().getReference("uploads")
+    private val storageReference = FirebaseStorage.getInstance().getReference("uploads")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityShowListPhotoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar?.title = "All Image"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "All Images"
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        listFiles()
+        getAllImage()
     }
 
-    private fun listFiles() = CoroutineScope(Dispatchers.IO).launch {
+    /**
+     * Fungsi mengambil semua data pada database
+     */
+    private fun getAllImage() = CoroutineScope(Dispatchers.IO).launch {
         try {
-            val images = imageStorageReference.listAll().await()
+            val images = storageReference.listAll().await()
             val imageUrls = mutableListOf<String>()
             for(image in images.items) {
                 val url = image.downloadUrl.await()
                 imageUrls.add(url.toString())
             }
+
             withContext(Dispatchers.Main) {
-                animalAdapter = AnimalAdapter(imageUrls)
+                val animalAdapter = AnimalAdapter(imageUrls)
                 if (animalAdapter.itemCount == 0) {
                     binding.textViewNoData.visibility = View.VISIBLE
                 }
-                binding.recyclerViewAnimal.apply {
+                binding.progressLoadList.visibility = View.GONE
+                binding.recyclerViewImage.apply {
                     adapter = animalAdapter
                     layoutManager = LinearLayoutManager(this@ShowListPhotoActivity)
                 }
             }
         } catch(e: Exception) {
             withContext(Dispatchers.Main) {
+                binding.progressLoadList.visibility = View.GONE
                 Toast.makeText(this@ShowListPhotoActivity, e.message, Toast.LENGTH_LONG).show()
             }
         }

@@ -7,12 +7,12 @@ import coil.load
 import coil.transform.RoundedCornersTransformation
 import com.goggxi.storagefirebaseapps.databinding.ListAnimalBinding
 
-class AnimalAdapter(private val urlImage: List<String>) : RecyclerView.Adapter<AnimalAdapter.ViewHolder>() {
+class AnimalAdapter(private val ImageUrl: List<String>) : RecyclerView.Adapter<AnimalAdapter.ViewHolder>() {
 
     inner class ViewHolder(private val binding: ListAnimalBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(url: String) {
             with(binding) {
-                imageViewListAnimal.load(url){
+                imageViewList.load(url){
                     crossfade(true)
                     crossfade(500)
                     transformations(RoundedCornersTransformation(10F))
@@ -31,13 +31,13 @@ class AnimalAdapter(private val urlImage: List<String>) : RecyclerView.Adapter<A
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        urlImage[position].let {
+        ImageUrl[position].let {
             holder.bind(it)
         }
     }
 
     override fun getItemCount(): Int {
-        return urlImage.size
+        return ImageUrl.size
     }
 
 }
